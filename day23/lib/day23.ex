@@ -8,11 +8,39 @@ defmodule Day23 do
   end
 
   def solveB(filename) do
-    instructions =
+    # Looking at the instructions we can see that h will be incremented when f = 0,
+    # and f = 0 when b = d.e, and b will be incremented until it reaches c.
+    # Since d and e starts both at 2 and get incremented by 1, the only times b will not be
+    # equal to d.e is when b is a prime number.
+    # So the number of incrementations for h is the number of times b is not a prime number,
+    # start at the initial value of b, stopping when b reaches c, and incrementing b by the
+    # given instructions.
+    all_instructions =
       filename
       |> parse
-    rec_solve(instructions, %{"a" => 1}, 0, 0, tuple_size(instructions) - 1)
-    |> elem(1)
+      |> Tuple.to_list
+
+    init_instructions =
+      all_instructions
+      |> Enum.take(8)
+      |> List.to_tuple
+
+    [{_, _, _, _, neg_increment}, _] =
+      all_instructions
+      |> Enum.drop(30)
+    increment = - neg_increment
+
+    {_, %{"b" => start, "c" => stop}} =
+      init_instructions
+      |> rec_solve(%{"a" => 1}, 0, 0, tuple_size(init_instructions) - 1)
+
+    last =
+      (stop - start) / increment
+      |> round
+
+    (for n <- 0..last, do: start + n * increment)
+    |> Enum.reject(&is_prime/1)
+    |> length
   end
 
   def parse(filename) do
@@ -43,10 +71,9 @@ defmodule Day23 do
 
   def rec_solve(_instructions, registers, pos, count, max)
   when pos < 0 or pos > max do
-    {count, Map.get(registers, "h")}
+    {count, registers}
   end
   def rec_solve(instructions, registers, pos, count, max) do
-    IO.puts "pos: #{pos}, val h: #{inspect registers}"
     {instr, typex, x, typey, y} = elem(instructions, pos)
 
     valx =
@@ -82,5 +109,12 @@ defmodule Day23 do
       end
 
     rec_solve(instructions, registers, pos, count, max)
+  end
+
+  def is_prime(n) when n < 4 and n > 0, do: true
+  def is_prime(n) do
+    top = :math.sqrt(n) |> round
+    2 .. top
+    |> Enum.all?(fn i -> rem(n, i) != 0 end)
   end
 end
