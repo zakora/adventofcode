@@ -1,142 +1,142 @@
 defmodule Day21 do
-  @start [[".", "#", "."],
-          [".", ".", "#"],
-          ["#", "#", "#"]]
+  # Faster version for Day 21 (~100-1000x time faster).
+  # Inspired by Saša Jurić version: https://gist.github.com/sasa1977/1246dc75886faf7da6b7956d158c2420
+  # This version uses boolean lists instead of binaries and makes heavy use of
+  # streams to transform the pixel grid.
 
   def solveA(filename), do: solve filename, 5
   def solveB(filename), do: solve filename, 18
   def solve(filename, niter) do
-    book = parse filename
-    grid = rec_solveA @start, niter, book
-    grid
-    |> List.flatten
-    |> Enum.count(fn x -> x == "#" end)
+    rules = parse filename
+
+    {3, ".#./..#/###" |> to_bin_square}
+    |> Stream.iterate(&iter(&1, rules))
+    |> Enum.at(niter)
+    |> count
+  end
+
+  def iter({size, pixels}, rules) do
+    square_size = if rem(size, 2) == 0, do: 2, else: 3
+    next_square_size = if square_size == 2, do: 3, else: 4
+    nsquares_by_row = div size, square_size
+
+    pixels =
+      pixels
+      |> squares(size, square_size, nsquares_by_row)
+      |> Stream.map(&Map.fetch!(rules, &1))
+      |> merge(next_square_size, nsquares_by_row)
+    {next_square_size * nsquares_by_row, pixels}
+  end
+
+  def count({_size, pixels}) do
+    Enum.count pixels, fn x -> x end
+  end
+
+  def squares(pixels, size, square_size, nsquares_by_row) do
+    pixels
+    |> Stream.chunk_every(square_size)
+    |> Stream.chunk_every(size)
+    |> Stream.map(&Stream.chunk_every(&1, nsquares_by_row))
+    |> Stream.flat_map(&Stream.zip/1)
+    |> Stream.map(fn tuple -> tuple |> Tuple.to_list |> Enum.concat end)
+  end
+
+  def merge(squares, square_size, nsquares_by_row) do
+    squares
+    |> Stream.chunk_every(nsquares_by_row)
+    |> Stream.flat_map(&merge_row(&1, square_size))
+  end
+
+  def merge_row(row, square_size) do
+    row
+    |> Stream.map(&Stream.chunk_every(&1, square_size))
+    |> Stream.zip
+    |> Stream.flat_map(fn tuple -> tuple |> Tuple.to_list |> Stream.concat end) 
   end
 
   def parse(filename) do
     filename
-    |> File.stream!([:utf8], :line)
-    |> Enum.map(&String.trim/1)
-    |> Enum.reduce(%{}, fn line, acc ->
-      {k, v} = get_rule line
-      Map.put acc, k, v
+    |> File.stream!
+    |> Stream.map(&String.trim/1)
+    |> Stream.map(&String.split &1, " => ")
+    |> Stream.map(fn line -> Enum.map line, &to_bin_square/1 end)
+    |> Enum.map(&List.to_tuple/1)
+    |> Map.new
+    |> enhance
+  end
+
+  def enhance(map) do
+    map
+    |> Map.keys
+    |> Enum.reduce(map, fn square, acc ->
+      enhanced_square = Map.fetch! map, square
+      square
+      |> variations
+      |> Stream.zip(Stream.cycle [enhanced_square])
+      |> Map.new
+      |> Map.merge(acc)
     end)
   end
 
-  def get_rule(line) do
-    [left, right] = String.split(line, " => ")
-    {to_square(left), to_square(right)}
+  def variations(square) do
+    square
+    |> rotations
+    |> Enum.flat_map(fn sq -> [sq, fliph(sq), flipv(sq)] end)
   end
 
-  def to_square(pattern) do
-    pattern
-    |> String.split("/")
-    |> Enum.map(fn line -> String.split(line, "", trim: true) end)
+  def rotations(square) do
+    rot1 = rotate square
+    rot2 = rotate rot1
+    rot3 = rotate rot2
+    [square, rot1, rot2, rot3]
   end
 
-  def patterns(pixels) do
-    [pixels | rotations(pixels)]
-    |> Enum.reduce(MapSet.new, fn block, acc ->
-      MapSet.union acc, MapSet.new([fliph(block), flipv(block)])
+  def rotate([a, b,
+              c, d]) do
+    [c, a,
+     d, b]
+  end
+  def rotate([a, b, c,
+              d, e, f,
+              g, h, i]) do
+    [g, d, a,
+     h, e, b,
+     i, f, c]
+  end
+  def flipv([a, b,
+             c, d]) do
+    [b, a,
+     d, c]
+  end
+  def flipv([a, b, c,
+             d, e, f,
+             g, h, i]) do
+    [c, b, a,
+     f, e, d,
+     i, h, g]
+  end
+  def fliph([a, b,
+             c, d]) do
+    [c, d,
+     a, b]
+  end
+  def fliph([a, b, c,
+             d, e, f,
+             g, h, i]) do
+   [g, h, i,
+    d, e, f,
+    a, b, c]
+  end
+
+  def to_bin_square(square) do
+    square
+    |> String.codepoints
+    |> Stream.reject(fn c -> c == "/" end)
+    |> Enum.map(fn c ->
+      case c do
+        "." -> false
+        "#" -> true
+      end
     end)
   end
-
-  def fliph(pixels), do: Enum.reverse pixels
-  def flipv(pixels), do: Enum.map pixels, &Enum.reverse/1
-  def rotate(pixels) do
-    size = pixels |> length
-    empty = List.duplicate [], size
-    rec_rotate(pixels, empty)
-  end
-  def rec_rotate([], output), do: output
-  def rec_rotate(input, output) do
-    [line | tail] = input
-
-    output =
-      Enum.zip(line, output)
-      |> Enum.map(fn {pixel, rline} -> [pixel | rline] end)
-
-    rec_rotate(tail, output)
-  end
-  def rotations(pixels) do
-    r1 = rotate(pixels)
-    r2 = rotate(r1)
-    r3 = rotate(r2)
-    [r1, r2, r3]
-  end
-
-  def print(pixels) do
-    pixels
-    |> Enum.map(fn line -> Enum.join line, "" end)
-    |> Enum.join("\n")
-    |> IO.write
-    IO.write("\n")
-  end
-
-  def rec_solveA(grid, 0, _book), do: grid
-  def rec_solveA(grid, iter, book) do
-    width = length grid
-    blocks =
-      if rem(width, 2) == 0 do
-        divide(grid, 2, width)
-      else
-        divide(grid, 3, width)
-      end
-    converted = Enum.map(blocks, fn b -> convert b, book end)
-    nblocks = length converted
-    grid =
-      if rem(width, 2) == 0 do
-        assemble(converted, 0, 0, [], 3, nblocks)
-      else
-        assemble(converted, 0, 0, [], 4, nblocks)
-      end
-    IO.puts "iter: #{iter}"
-    rec_solveA grid, iter - 1, book
-  end
-
-  def divide(grid, chunk_size, width) do
-    grid
-    |> Enum.map(fn line -> Enum.chunk_every line, chunk_size end)
-    |> rec_divide(0, 0, [], chunk_size, width)
-  end
-
-  def rec_divide(grid, x, y, res, chunk_size, width) do
-    cond do
-      y == width ->
-        res
-      x == width / chunk_size ->
-        rec_divide(grid, 0, y + chunk_size, res, chunk_size, width)
-      true ->
-        res =
-          res ++ [Enum.map(0 .. chunk_size - 1, fn n ->
-            grid |> Enum.at(y + n) |> Enum.at(x)
-          end)]
-        rec_divide(grid, x + 1, y, res, chunk_size, width)
-    end
-  end
-
-  def convert(block, book) do
-    match =
-      patterns(block)
-      |> Enum.find(fn p -> Map.has_key? book, p end)
-    Map.get book, match
-  end
-
-  def assemble(grid, x, y, res, chunk_size, nblocks) do
-    cond do
-      y == nblocks ->
-        res
-      x == chunk_size ->
-        assemble(grid, 0, y + round(:math.sqrt(nblocks)), res, chunk_size, nblocks)
-      true ->
-        block =
-          Enum.map(0 .. round(:math.sqrt(nblocks) - 1), fn n ->
-              grid |> Enum.at(y + n) |> Enum.at(x)
-            end)
-          |> Enum.concat
-        res = res ++ [block]
-        assemble(grid, x + 1, y, res, chunk_size, nblocks)
-    end
-  end
-
 end
