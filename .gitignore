@@ -2,7 +2,11 @@
 *.txt
 *.in
 *.out
+
+# Python
 *.pyc
 *.pyo
 venv/
+
+# Common
 test/
