@@ -1,7 +1,9 @@
-= Advent of Code 2017
+= Advent of Code
 
-This repository contains my solutions for the https://adventofcode.com/2017/[Advent of Code 2017].
+This repository contains my solutions for the https://adventofcode.com/[Advent of Code].
+There is a directory by year. Then, for each year there is a directory by language.
 
+== AoC 2017 edition
 I chose to use https://elixir-lang.org[Elixir] to solve the puzzles in order to learn it.
 Thus, my solutions might not be optimal or might not use the common Elixir idioms.
 Please feel free to submit a pull request in order to improve the code.
@@ -10,3 +12,8 @@ I think that some solutions didn't cover all special case.
 While they were valid for me, some might not be working with different inputs that I got.
 
 Unfortunately the code is not well documented since solving a puzzle is a one off task.
+
+== AoC 2016 edition
+I didn't participate in the 2016 edition. However you will find some code for this edition
+in this repository. It is mostly starter code to have a workflow to solve AoC challenges
+in different languages.
