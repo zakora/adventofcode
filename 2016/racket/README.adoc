@@ -1,0 +1,7 @@
+= Racket
+
+== Usage
+
+Run with `racket dayX.rkt < path/to/input_file`.
+
+Test with `raco test dayX.rkt`.
