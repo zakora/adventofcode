@@ -88,7 +88,7 @@
                              (cons 0 3))))))
 
 (define (do-steps cposn dir steps found-posn past-posns)
-  (if (eq? 0 steps)
+  (if (zero? steps)
       (list cposn found-posn past-posns)
       (let* ([cposn
               (match dir
@@ -111,7 +111,7 @@
                   cxy
                   found-posn)]
              [past-posns (set-add past-posns cxy)])
-        (do-steps cposn dir (- steps 1) found-posn past-posns))))
+        (do-steps cposn dir (sub1 steps) found-posn past-posns))))
 
 
 ;; posn -> String -> Integer -> posn? -> Set posns -> (posn, posn-xy?, Set posn-xy)
