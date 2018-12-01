@@ -1,0 +1,3 @@
+Run with `nim c -r dayX.nim < input_dayX.txt`.
+
+If too slow, try running with `nim c -d:release -r dayX.nim < inpyt_dayX.txt`. It should be faster at running at the expense of longer compile time.
