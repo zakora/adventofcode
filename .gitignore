@@ -2,6 +2,7 @@
 *.txt
 *.in
 *.out
+*.secret
 
 # Python
 *.pyc
@@ -10,3 +11,6 @@ venv/
 
 # Common
 test/
+
+# Rust
+target/
