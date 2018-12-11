@@ -1,0 +1,4 @@
+Part one was fast.
+
+Part two is slow. The code gave the correct answer but had to wait 1-2h.
+Most probably there is a trick to get the complexity below O(n^4).
