@@ -1,0 +1,3 @@
+Run with:
+
+clj -m day1 < INPUT_FILE
