@@ -1,0 +1,62 @@
+(ns day2
+  (:require [clojure.string :as str]))
+
+(defn get-lines
+  "Take input from stdin, returns a vector of strings"
+  []
+  (loop [input (read-line)
+         lines []]
+    (if (str/blank? input)
+      lines
+      (recur (read-line)
+             (conj lines input)))))
+
+(defn count-letters
+  "Count the number of occurences of each letter in a word"
+  [word]
+  (loop [letters (str/split word #"")
+         occurences {}]
+     (if (empty? letters)
+          occurences
+       (let [letter (first letters)
+             n (get occurences letter 0)]
+         (recur (rest letters)
+	        (assoc occurences letter (+ n 1)))))))
+
+(defn inc-boxid-n
+  "Return 1 if the given box ID has a letter exactly n times, 0 otherwise"
+  [n boxid]
+  (let [counts (vals (count-letters boxid))]
+    (if (.contains counts n)
+      1
+      0)))
+
+(def inc-boxid-three
+  (partial inc-boxid-n 3))
+
+(def inc-boxid-two
+  (partial inc-boxid-n 2))
+
+(defn qa
+  [lines]
+  (loop [boxids lines
+         twos 0
+         threes 0]
+    (if (empty? boxids)
+      (println "qa" (* twos threes))
+      (recur (rest boxids)
+             (+ (inc-boxid-two (first boxids)) twos)
+             (+ (inc-boxid-three (first boxids)) threes)))))
+
+
+(def qb
+  [lines]
+  (loop [boxid (first lines)
+         rem-boxids (rest boxids)]
+)
+
+(defn -main
+  []
+  (let [lines (get-lines)]
+    (do
+      (qa lines))))
