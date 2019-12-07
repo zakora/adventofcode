@@ -9,6 +9,10 @@
 *.pyo
 venv/
 
+# Clojure
+.cpcache/
+.nrepl-port
+
 # Common
 test/
 
